@@ -1,0 +1,6 @@
+name: AdventCore
+version: '1.0.0'
+main: fr.cercusmc.adventcore.AdventCore
+api-version: '1.21'
+load: STARTUP
+authors: [ CercusMC ]
