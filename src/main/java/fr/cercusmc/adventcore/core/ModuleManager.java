@@ -3,17 +3,18 @@ package fr.cercusmc.adventcore.core;
 
 import fr.cercusmc.adventcore.AdventCore;
 import fr.cercusmc.adventcore.utils.commands.Command;
+import fr.cercusmc.adventcore.utils.exceptions.LoadFileException;
 import fr.cercusmc.adventcore.utils.exceptions.RegisterCommandException;
 import fr.cercusmc.adventcore.utils.exceptions.RegisterModuleException;
 import fr.cercusmc.adventcore.utils.exceptions.UnRegisterCommandException;
+import fr.cercusmc.adventcore.utils.files.YamlFile;
 import org.bukkit.Bukkit;
 import org.bukkit.command.CommandMap;
 import org.bukkit.command.SimpleCommandMap;
 import org.bukkit.event.HandlerList;
 import org.bukkit.event.Listener;
 
-import java.io.File;
-import java.io.IOException;
+import java.io.*;
 import java.lang.reflect.Field;
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
@@ -21,6 +22,8 @@ import java.net.URL;
 import java.net.URLClassLoader;
 import java.util.List;
 import java.util.Map;
+import java.util.jar.JarEntry;
+import java.util.jar.JarFile;
 
 public class ModuleManager {
 
@@ -40,7 +43,7 @@ public class ModuleManager {
     }
 
     public void unloadModule(Module module) {
-        AdventCore.getInstance().getModules().remove(module.getName());
+        //AdventCore.getInstance().getModules().remove(module.getName());
         module.onDisable();
         this.unloadListeners(module.getListeners());
         module.getCommands().forEach(this::unregisterCommand);
@@ -78,41 +81,76 @@ public class ModuleManager {
     }
 
     public void loadModule(String moduleName) {
-        if(AdventCore.getInstance().getModules().containsKey(moduleName)) {
-            AdventCore.getKernel().createWarning("Module " + moduleName + " is already loaded.");
-            return;
-        }
+        if (AdventCore.getInstance().getModules().containsKey(moduleName)) return;
+
         try {
             File moduleFolder = new File(instance.getDataFolder(), "modules");
-            File[] moduleFiles = moduleFolder.listFiles((dir, name) -> name.endsWith(moduleName+".jar"));
-            if(moduleFiles == null || moduleFiles.length == 0) {
-                return;
-            }
-            URL[] urls = {moduleFiles[0].toURI().toURL()};
-            URLClassLoader classLoader = instance.getClassLoader(urls);
+            File[] moduleFiles = moduleFolder.listFiles((dir, name) -> name.equals(moduleName + ".jar"));
+            if (moduleFiles == null || moduleFiles.length == 0) return;
 
-            String mainClass = getMainClassFromJar(moduleFiles[0]);
+            File jar = moduleFiles[0];
+            String mainClass = getMainClassFromJar(jar);
+            if (mainClass == null) return;
 
-            Class<?> moduleClass = Class.forName(mainClass, true, classLoader);
-            Object moduleInstance = moduleClass.getDeclaredConstructor().newInstance();
+            Class<?> clazz = Class.forName(mainClass, true, new URLClassLoader(new URL[]{jar.toURI().toURL()}, instance.getClass().getClassLoader()));
+            Object moduleObj = clazz.getDeclaredConstructor().newInstance();
 
-            if (!(moduleInstance instanceof Module module)) {
-                AdventCore.getKernel().createError("Module " + moduleFiles[0].getName().substring(0, moduleFiles[0].getName().lastIndexOf(".jar")) + " does not implement the Module interface.");
-                return;
-            }
+            if (!(moduleObj instanceof Module module)) return;
 
+
+            // 1️⃣ Déclare les fichiers à extraire
+            module.registerFiles();
+
+            System.out.println(module.getFiles());
+            // 2️⃣ Extrait les fichiers du JAR
+            extractResources(jar, module.getFiles());
+
+            // 3️⃣ Active le module
+            module.onEnable();
             AdventCore.getInstance().getModules().put(module.getName(), module);
 
-            module.onEnable();
 
+
+            // 4️⃣ Commandes et listeners
             registerCommands(module.getCommands());
             registerListeners(module.getListeners());
 
-            AdventCore.getKernel().createInfo("Module" + module.getName() + " v"+module.getVersion()+" has been loaded");
-        } catch (IOException | ClassNotFoundException | NoSuchMethodException | InvocationTargetException | InstantiationException | IllegalAccessException e) {
+            AdventCore.getKernel().createInfo("Module " + module.getName() + " v" + module.getVersion() + " loaded");
+
+        } catch (Exception e) {
             throw new RegisterModuleException("Error loading module " + moduleName, e);
         }
 
+    }
+
+    private void extractResourceFromJar(File jarFile, String resourcePath, File outputFile) throws IOException {
+        try (JarFile jar = new JarFile(jarFile)) {
+            JarEntry entry = jar.getJarEntry(resourcePath);
+            if (entry == null) {
+                AdventCore.getKernel().createWarning("Resource " + resourcePath + " not found in jar.");
+                return;
+            }
+            outputFile.getParentFile().mkdirs();
+            try (InputStream in = jar.getInputStream(entry);
+                 OutputStream out = new FileOutputStream(outputFile)) {
+                in.transferTo(out);
+            }
+        }
+    }
+
+    private void extractResources(File jarFile, Map<String, YamlFile> resources) {
+        for (Map.Entry<String, YamlFile> entry : resources.entrySet()) {
+            File target = entry.getValue().getFile();
+            if (!target.exists()) {
+                try {
+                    extractResourceFromJar(jarFile, entry.getKey(), target);
+                    AdventCore.getKernel().createInfo("Created default " + entry.getKey() + " for " + entry.getValue().getFile());
+                } catch (IOException e) {
+                    throw new LoadFileException("Failed to extract resource " + entry.getKey(), e);
+                }
+            }
+            entry.getValue().reloadFile();
+        }
     }
 
     public void registerCommands(List<Command> commands) {

@@ -12,8 +12,8 @@ import java.util.List;
 
 public class UnregisterCommand extends Command {
 
-    public UnregisterCommand(JavaPlugin plugin) {
-        super(plugin, "unloadModule", "Decharger un module", "/unloadModule <moduleName>", Collections.emptyList(), "adventcore.unloadModule", (sender, args) -> {
+    public UnregisterCommand() {
+        super("unloadModule", "Decharger un module", "/unloadModule <moduleName>", Collections.emptyList(), "adventcore.unloadModule", (sender, args) -> {
             Module module = AdventCore.getInstance().getModules().get(args[0]);
             if(module != null) {
                 AdventCore.getInstance().getModuleManager().unloadModule(module);

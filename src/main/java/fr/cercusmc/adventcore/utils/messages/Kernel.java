@@ -18,17 +18,17 @@ import java.util.logging.Logger;
  */
 public class Kernel {
 
-    private final JavaPlugin plugin;
+    private final String prefix;
     private final Logger logger;
 
 
     /**
      * Creates a new Kernel instance with the given plugin.
-     * @param plugin The plugin
+     * @param prefix The prefix
      */
-    public Kernel(JavaPlugin plugin) {
-        this.plugin = plugin;
-        this.logger = plugin.getLogger();
+    public Kernel(String prefix) {
+        this.prefix = prefix;
+        this.logger = Logger.getLogger(this.prefix);
     }
 
     private void createLog(Level level, String message, Throwable throwable, Object... values) {
@@ -128,7 +128,7 @@ public class Kernel {
 
 
 
-    public JavaPlugin getPlugin() {
-        return plugin;
+    public String getPrefix() {
+        return prefix;
     }
 }

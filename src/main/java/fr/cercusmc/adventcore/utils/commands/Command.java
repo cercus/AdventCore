@@ -20,7 +20,6 @@ public abstract class Command extends BukkitCommand {
 
     private List<SubCommand> subCommands;
     private final BiConsumer<CommandSender, String[]> actionBaseCommand;
-    private final JavaPlugin plugin;
 
     private String description;
     private String usage;
@@ -28,7 +27,7 @@ public abstract class Command extends BukkitCommand {
     private List<String> aliases;
     private String name;
 
-    public Command(JavaPlugin plugin, @Nonnull String name, @Nonnull String description, @Nonnull String usageMessage, @Nonnull List<String> aliases, String permission, @Nonnull BiConsumer<CommandSender, String[]> actionBaseCommand, SubCommand... subCommands) {
+    public Command(@Nonnull String name, @Nonnull String description, @Nonnull String usageMessage, @Nonnull List<String> aliases, String permission, @Nonnull BiConsumer<CommandSender, String[]> actionBaseCommand, SubCommand... subCommands) {
         super(name, description, usageMessage, aliases);
         this.setPermission(permission);
         if(subCommands == null)
@@ -36,7 +35,6 @@ public abstract class Command extends BukkitCommand {
         else
             this.subCommands = new ArrayList<>(Arrays.asList(subCommands));
         this.actionBaseCommand = actionBaseCommand;
-        this.plugin = plugin;
         this.description = description;
         this.usage = usageMessage;
         this.permission = permission;

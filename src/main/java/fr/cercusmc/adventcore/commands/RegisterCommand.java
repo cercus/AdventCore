@@ -11,8 +11,8 @@ import java.util.List;
 
 public class RegisterCommand extends Command {
 
-    public RegisterCommand(JavaPlugin plugin) {
-        super(plugin, "loadModule", "Charger un module", "/loadModule <moduleName>", Collections.emptyList(), "adventcore.loadModule", (sender, args) -> AdventCore.getInstance().getModuleManager().loadModule(args[0]));
+    public RegisterCommand() {
+        super("loadModule", "Charger un module", "/loadModule <moduleName>", Collections.emptyList(), "adventcore.loadModule", (sender, args) -> AdventCore.getInstance().getModuleManager().loadModule(args[0]));
     }
 
     @Nonnull

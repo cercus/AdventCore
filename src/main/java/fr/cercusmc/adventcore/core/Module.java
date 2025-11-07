@@ -1,10 +1,15 @@
 package fr.cercusmc.adventcore.core;
 
+import fr.cercusmc.adventcore.AdventCore;
 import fr.cercusmc.adventcore.utils.commands.Command;
+import fr.cercusmc.adventcore.utils.files.YamlFile;
 import org.bukkit.event.Listener;
 
+import java.io.File;
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 
 /**
  * Represents a module that can be loaded and unloaded. Any main class of module must extend this class.
@@ -13,11 +18,17 @@ public abstract class Module {
 
     private final List<Listener> listeners;
     private final List<Command> commands;
+    private final String moduleName;
+    private final File moduleFolder;
+    private final Map<String, YamlFile> files;
 
-    protected Module() {
-
+    protected Module(String moduleName) {
+        this.moduleName = moduleName;
         this.listeners = new ArrayList<>();
         this.commands = new ArrayList<>();
+        moduleFolder = new File(AdventCore.getInstance().getDataFolder()+"/modules", moduleName);
+        this.files = new HashMap<>();
+
     }
 
     /**
@@ -31,7 +42,9 @@ public abstract class Module {
      * Returns the name of the module.
      * @return the name of the module.
      */
-    public abstract String getName();
+    public String getName() {
+        return moduleName;
+    }
 
     /**
      * Returns all listeners registered for this module.
@@ -88,5 +101,25 @@ public abstract class Module {
         commands.remove(command);
     }
 
+    /**
+     * Returns the folder of the module.
+     * @return the folder of the module.
+     */
+    public File getModuleFolder() {
+        return moduleFolder;
+    }
 
+    public void addFile(File folder, String file) {
+        files.put(file, new YamlFile(folder, getName(), file));
+    }
+
+    public Map<String, YamlFile> getFiles() {
+        return files;
+    }
+
+    public YamlFile getFile(String file) {
+        return this.files.get(file);
+    }
+
+    public void registerFiles() {}
 }

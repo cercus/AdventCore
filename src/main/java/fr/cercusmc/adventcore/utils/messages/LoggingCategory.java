@@ -16,11 +16,11 @@ public class LoggingCategory {
 
     /**
      * Get the kernel for logging in console
-     * @param plugin The plugin
+     * @param prefix The plugin
      * @return The kernel for logging in console
      */
-    public static Kernel getKernel(JavaPlugin plugin) {
-        return new Kernel(plugin);
+    public static Kernel getKernel(String prefix) {
+        return new Kernel(prefix);
     }
 
     /**

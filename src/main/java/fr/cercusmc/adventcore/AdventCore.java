@@ -10,9 +10,7 @@ import org.bukkit.plugin.java.JavaPlugin;
 import java.io.File;
 import java.net.URL;
 import java.net.URLClassLoader;
-import java.util.Arrays;
-import java.util.HashMap;
-import java.util.Map;
+import java.util.*;
 
 /**
  * The main class for the AdventCore plugin.
@@ -29,7 +27,7 @@ public final class AdventCore extends JavaPlugin {
     public void onEnable() {
         setInstance(this);
         modules = new HashMap<>();
-        setKernel(new Kernel(this));
+        setKernel(new Kernel("AdventCore"));
         getKernel().createInfo("AdventCore " + getDescription().getVersion()+ "has been enabled!");
         moduleManager = new ModuleManager();
         File moduleFile = new File(getDataFolder(), "modules");
@@ -37,12 +35,18 @@ public final class AdventCore extends JavaPlugin {
             moduleFile.mkdirs();
         }
         moduleManager.loadModules();
-        moduleManager.registerCommands(Arrays.asList(new RegisterCommand(this), new UnregisterCommand(this)));
+        moduleManager.registerCommands(Arrays.asList(new RegisterCommand(), new UnregisterCommand()));
     }
 
     @Override
     public void onDisable() {
-        modules.forEach((k, v) -> moduleManager.unloadModule(v));
+
+        List<String> modulesTmp = new ArrayList<>();
+        for(Map.Entry<String, Module> moduleEntry : getModules().entrySet()) {
+            moduleManager.unloadModule(moduleEntry.getValue());
+            modulesTmp.add(moduleEntry.getKey());
+        }
+        modulesTmp.forEach(k -> modules.remove(k));
     }
 
     /**
